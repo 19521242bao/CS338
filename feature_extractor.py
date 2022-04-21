@@ -10,10 +10,20 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.applications import xception
 import numpy as np
 from tensorflow import keras 
+
+
+
+# !pip install git+https://github.com/rcmalli/keras-vggface.git
+# !pip install keras_applications --no-deps
+filename =r'C:\Users\Admin\AppData\Local\Programs\Python\Python37\lib\site-packages\keras_vggface\models.py'
+text = open(filename).read()
+open(filename, "w+").write(text.replace('keras.engine.topology', 'tensorflow.keras.utils'))
+import tensorflow as tf
 from keras.preprocessing import image
 from keras_vggface.vggface import VGGFace
 from keras_vggface import utils
 
+vggface = VGGFace(model='resnet50') # or VGGFace() as default
 class VGG16_FE:
 
     def __init__(self):
@@ -48,7 +58,7 @@ class Xception_FE:
         return feature
 class VGGFACE_FE:
     def __init__(self):
-        self.model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+        self.model = VGGFace(model='vgg16', include_top=False, input_shape=(224, 224, 3), pooling='avg')
 
     def extract(self, img):
         img = img.resize((224, 224))

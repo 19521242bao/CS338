@@ -34,12 +34,12 @@ class Facesystem:
             os.mkdir(self.feature_folder_path)
     def index(self):
         for img_path in tqdm(os.listdir(self.image_folder)):
-            print("hello word")
-            print(img_path)
+            #print("hello word")
+            #print(img_path)
             name = img_path.split('/')[-1][:-3]
             vector_file = os.path.join(self.feature_folder_path,name+'.pkl')
             img_path_full = os.path.join(self.image_folder+'\\'+img_path)
-            print(img_path_full)
+            #print(img_path_full)
             img = cv2.imread(img_path_full)
             if self.detector.detect(img) is None:
                 return 0
@@ -70,7 +70,25 @@ class Facesystem:
             return 'Unknown'
 
         return face_name, top_similarity, res_dict
+    def recognition_1(self,img,vectors):
+        res_dict={}
+        
+        top_similarity=0.0
+        i=0
+        for vector_file in os.listdir(self.feature_folder_path):
+            #vector_file_path=os.path.join(self.feature_folder_path,vector_file)
+            vector=vectors[i]
+            similarity=1-spatial.distance.cosine(vector,self.extractor.extract(img))
+            print(similarity)
+            name=vector_file.split('.')[0]
+            i+=1
+            if similarity> top_similarity:
+                face_name = vector_file.split('.')[0]
+                top_similarity=similarity
+        if top_similarity < 0.5:
+            return 'Unknown'
 
+        return face_name    
     def recognition_img(self,img_path):
         if isinstance(img_path, str):
             PIL_img = Image.open(img_path)
@@ -92,6 +110,11 @@ class Facesystem:
 
         if not cap.isOpened():
             raise IOError("Cannot open webcam")
+        vectors=[]
+        for vector_file in os.listdir(self.feature_folder_path):
+            vector_file_path=os.path.join(self.feature_folder_path,vector_file)
+            vector=pickle.load(open(vector_file_path,'rb'))
+            vectors.append(vector)
 
         while True:
             ret, frame = cap.read()
@@ -103,12 +126,13 @@ class Facesystem:
 
             if self.detector.detect(frame) is None:
                 continue
+            
 
             x_min, y_min, x_max, y_max = self.detector.detect(frame)
             processed_frame = Image.fromarray(np.uint8(frame[y_min:y_max, x_min:x_max])).convert('RGB')
             res_frame = cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-
-            if self.recognition(processed_frame) == "Unknown":
+            
+            if self.recognition_1(processed_frame,vectors) == "Unknown":
                 face_name = "Unknown"
                 cv2.putText(res_frame, face_name, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             else:
@@ -123,5 +147,5 @@ class Facesystem:
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 system=Facesystem('datasets','VGGFACE')
 #system.index()
-#system.recognition_img("72fcc4a8c77c0922506d.jpg")
+#system.recognition_img("duong.jpg")
 system.recognition_webcam()
